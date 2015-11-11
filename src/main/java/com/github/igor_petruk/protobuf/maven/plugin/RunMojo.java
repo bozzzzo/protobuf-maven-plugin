@@ -25,6 +25,11 @@ import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.dependency.tree.DependencyNode;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
@@ -40,11 +45,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-/**
- * @goal run
- * @phase generate-sources
- * @requiresDependencyResolution
- */
+@Mojo(name="run",
+      defaultPhase=LifecyclePhase.GENERATE_SOURCES,
+      requiresDependencyResolution=ResolutionScope.RUNTIME)
 public class RunMojo extends AbstractMojo {
 
     private static final String DEFAULT_INPUT_DIR= "/src/main/protobuf/".replace('/',File.separatorChar);
@@ -52,72 +55,55 @@ public class RunMojo extends AbstractMojo {
 
     /**
      * The Maven project.
-     *
-     * @parameter expression="${project}"
-     * @required
-     * @readonly
      */
+    @Parameter(property="project", required=true, readonly=true)
     private MavenProject project;
 
     /**
      * The artifact repository to use.
-     *
-     * @parameter expression="${localRepository}"
-     * @required
-     * @readonly
      */
+    @Parameter(property="localRepository", required=true, readonly=true)
     private ArtifactRepository localRepository;
 
     /**
      * The artifact factory to use.
-     *
-     * @component
-     * @required
-     * @readonly
      */
+    @Component
     private ArtifactFactory artifactFactory;
 
     /**
      * The artifact metadata source to use.
-     *
-     * @component
-     * @required
-     * @readonly
      */
+    @Component
     private ArtifactMetadataSource artifactMetadataSource;
 
     /**
      * The artifact collector to use.
-     *
-     * @component
-     * @required
-     * @readonly
      */
+    @Component
     private ArtifactCollector artifactCollector;
 
     /**
      * The dependency tree builder to use.
      *
-     * @component
-     * @required
-     * @readonly
      */
+    @Component
     private DependencyTreeBuilder dependencyTreeBuilder;
 
-    /** @component */
+    @Component
     private BuildContext buildContext;
 
     /**
      * Input directories that have *.protoc files (or the configured extension).
      * If none specified then <b>src/main/protobuf</b> is used.
-     * @parameter expression="${inputDirectories}"
      */
+    @Parameter(property="inputDirectories")
     private File[] inputDirectories;
 
     /**
      * This parameter lets you specify additional include paths to protoc.
-     * @parameter expression="${includeDirectories}"
      */
+    @Parameter(property="includeDirectories")
     private File[] includeDirectories;
 
     /**
@@ -126,18 +112,16 @@ public class RunMojo extends AbstractMojo {
      * rename in your IDE cache or after non-clean rebuild.
      * Set this to "false" if you are doing multiple plugin invocations per build
      * and it is important to preserve output folder contents
-     * @parameter expression="${cleanOutputFolder}" default-value="true"
-     * @required
      */
+    @Parameter(property="cleanOutputFolder", defaultValue="true", required=true)
     private boolean cleanOutputFolder;
 
     /**
      * Specifies a mode for plugin whether it should
      * add outputDirectory to sources that are going to be compiled
      * Can be "main", "test" or "none"
-     * @parameter expression="${addSources}" default-value="main"
-     * @required
      */
+    @Parameter(property="addSources", required=true, defaultValue="main")
     private String addSources;
 
     /**
@@ -145,61 +129,56 @@ public class RunMojo extends AbstractMojo {
      * Defaults to "${project.build.directory}/generated-sources/protobuf"
      * or "${project.build.directory}/generated-test-sources/protobuf" depending
      * addSources parameter
-     * @parameter expression="${outputDirectory}"
      */
+    @Parameter(property="outputDirectory")
     private File outputDirectory;
 
     /**
      * Default extension for protobuf files
-     * @parameter expression="${extension}" default-value=".proto"
-     * @required
      */
+    @Parameter(property="extension", defaultValue=".proto", required=true)
     private String extension;
 
     /**
      * Setting to "true" disables version check between 'protoc' and the protobuf library used by module
-     * @parameter expression="${ignoreVersions}" default-value="false"
-     * @required
      */
+    @Parameter(property="ignoreVersions", defaultValue="false", required=true)
     private boolean ignoreVersions;
 
     /**
      * Setting to "true" allows protoc to output as c++.
-     * @parameter expression="${cppOutput}" default-value="false"
-     * @required
      */
+    @Parameter(property="cppOutput", defaultValue="false", required=true)
     private boolean cppOutput;
 
     /**
      * Setting to "true" allows protoc to output as java.
-     * @parameter expression="${javaOutput}" default-value="true"
-     * @required
      */
+    @Parameter(property="javaOutput", defaultValue="true", required=true)
     private boolean javaOutput;
 
     /**
      * Setting to "true" allows protoc to output as python.
-     * @parameter expression="${pythonOutput}" default-value="false"
-     * @required
      */
+    @Parameter(property="pythonOutput", defaultValue="false", required=true)
     private boolean pythonOutput;
 
     /**
      * This parameter allows to override the protoc command that is going to be used.
-     * @parameter expression="${protocCommand}" default-value="protoc"
      */
+    @Parameter(property="protocCommand", defaultValue="protoc")
     private String protocCommand;
 
     /**
      * This parameter allows to override protobuf library groupId
-     * @parameter expression="${protobufGroupId}" default-value="com.google.protobuf"
      */
+    @Parameter(property="protobufGroupId", defaultValue="com.google.protobuf")
     private String protobufGroupId;
 
     /**
      * This parameter allows to override protobuf library artifactId
-     * @parameter expression="${protobufArtifactId}" default-value="protobuf-java"
      */
+    @Parameter(property="protobufArtifactId", defaultValue="protobuf-java")
     private String protobufArtifactId;
     
     /**
@@ -213,9 +192,8 @@ public class RunMojo extends AbstractMojo {
      * <li>all: Validate if two versions are same.</li>
      * </ul>
      * 
-     * @parameter expression="${protobufVersionValidationStrategy}"
-     *            default-value="minor"
      */
+    @Parameter(property="protobufVersionValidationStrategy", defaultValue="minor")
     private String protobufVersionValidationStrategy;
 
     public void execute() throws MojoExecutionException
@@ -375,7 +353,7 @@ public class RunMojo extends AbstractMojo {
             DependencyNode node = dependencyTreeBuilder.buildDependencyTree(project,localRepository,
                     artifactFactory,
                     artifactMetadataSource,
-                    null,
+                    artifactFilter,
                     artifactCollector
             );
             return traverseNode(node);
@@ -405,8 +383,12 @@ public class RunMojo extends AbstractMojo {
                 printErrorAndThrow(process);
             } else {
                 Scanner scanner = new Scanner(process.getInputStream());
-                String[] version = scanner.nextLine().split(" ");
-                return version[1];
+                try {
+                    String[] version = scanner.nextLine().split(" ");
+                    return version[1];
+                } finally {
+                    scanner.close();
+                }
             }
         } catch (IOException e) {
             throw new MojoExecutionException("Cannot execute '" + protocCommand + "'", e);
@@ -423,10 +405,13 @@ public class RunMojo extends AbstractMojo {
 
     private void printErrorAndThrow(Process process, String exceptionMessage) throws MojoExecutionException {
         Scanner scanner = new Scanner(process.getErrorStream());
-        while (scanner.hasNextLine()) {
-            getLog().error("    " + scanner.nextLine());
+        try {
+            while (scanner.hasNextLine()) {
+                getLog().error("    " + scanner.nextLine());
+            }
+        } finally {
+            scanner.close();
         }
-
         throw new MojoExecutionException("'protoc' failed" + exceptionMessage + ". Exit code " + process.exitValue());
     }
 

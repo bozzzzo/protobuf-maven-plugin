@@ -356,7 +356,12 @@ public class RunMojo extends AbstractMojo {
                     artifactFilter,
                     artifactCollector
             );
-            return traverseNode(node);
+            String version = traverseNode(node);
+            if (version == null) {
+                getLog().error("Cannot find dependency " + this.protobufGroupId + ":" + this.protobufArtifactId);
+                throw new MojoExecutionException("missing project dependency");
+            }
+            return version;
 
         } catch (DependencyTreeBuilderException e) {
             throw new MojoExecutionException("Unable to traverse dependency tree", e);
